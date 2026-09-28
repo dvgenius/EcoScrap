@@ -1,272 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { Scale, ShieldAlert, CheckCircle2, QrCode, AlertTriangle, IndianRupee, KeyRound, ArrowRight } from 'lucide-react';
-import { verifyHandover } from '../../services/api';
-import confetti from 'canvas-confetti';
+import React, { useState } from 'react';
+import { X, Scale, KeyRound, CheckCircle2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { verifyLot } from '../../services/api';
+import { ttsService } from '../../services/tts';
 
-export default function VerificationTerminal({ activeLot, onHandoverSuccess, onSelectLotId }) {
-  const [lotInput, setLotInput] = useState(activeLot?.lot_id || '');
-  const [scaleWeight, setScaleWeight] = useState(activeLot ? activeLot.est_weight_kg : 0);
-  const [otpCode, setOtpCode] = useState('');
-  const [paymentMode, setPaymentMode] = useState('UPI'); // 'UPI' | 'CASH'
+export default function VerificationTerminal({ lot, onVerified, onClose }) {
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [verifiedWeight, setVerifiedWeight] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (activeLot) {
-      setLotInput(activeLot.lot_id);
-      setScaleWeight(activeLot.verified_weight_kg || activeLot.est_weight_kg || 0);
-      setOtpCode('');
-      setErrorMsg('');
-    }
-  }, [activeLot]);
-
-  if (!activeLot) {
-    return (
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center text-slate-400">
-        <Scale size={40} className="mx-auto text-slate-600 mb-2" />
-        <h3 className="text-base font-bold text-slate-300">No Lot Selected for Verification</h3>
-        <p className="text-xs text-slate-500 mt-1">
-          Select an incoming lot from the live radar feed or enter a Lot ID.
-        </p>
-      </div>
-    );
-  }
-
-  const estWeight = Number(activeLot.est_weight_kg || 0);
-  const currentScale = Number(scaleWeight || 0);
-  const baseRate = Number(activeLot.base_market_price_per_kg || 0);
-
-  // Anomaly Calculation (>10% divergence)
-  const weightDiff = currentScale - estWeight;
-  const divergencePct = estWeight > 0 ? (Math.abs(weightDiff) / estWeight) * 100 : 0;
-  const isAnomaly = divergencePct > 10.0;
-
-  // Final adjusted payout
-  const adjustedPay = Math.round(currentScale * baseRate);
-
-  const handleSubmitVerification = async (e) => {
-    e.preventDefault();
-    if (!otpCode || otpCode.trim().length !== 4) {
-      setErrorMsg('Please enter the 4-digit verification code from the collector.');
+  const handleVerify = async () => {
+    if (enteredOtp.length !== 4 || !verifiedWeight || parseFloat(verifiedWeight) <= 0) {
+      setError('कृपया 4-अंकी OTP और वैध वजन दर्ज करें।');
       return;
     }
-    if (currentScale <= 0) {
-      setErrorMsg('Please enter a valid scale weight greater than 0.');
-      return;
-    }
-
-    setIsVerifying(true);
-    setErrorMsg('');
-
+    setIsVerifying(true); setError('');
     try {
-      const response = await verifyHandover(activeLot.lot_id, {
-        verified_weight_kg: currentScale,
-        verification_otp: otpCode.trim(),
-        payment_mode: paymentMode,
-        recycler_id: 1
+      const res = await verifyLot(lot.lot_id, {
+        otp: enteredOtp, weight: parseFloat(verifiedWeight), recycler_id: 'REC-MH-0045'
       });
-
-      if (response.success) {
-        confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-        onHandoverSuccess(response.receipt, response.data);
+      if (res.success) {
+        ttsService.playChime('success');
+        onVerified({ lot_id: lot.lot_id, weight: parseFloat(verifiedWeight) });
+      } else {
+        setError(res.message || 'Verification failed — OTP mismatch.');
+        ttsService.playChime('error');
       }
-    } catch (err) {
-      setErrorMsg(err.message || 'Verification failed. Please check the OTP code.');
-    } finally {
-      setIsVerifying(false);
-    }
+    } catch (e) { setError('Server error: ' + e.message); }
+    finally { setIsVerifying(false); }
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-5">
-      
-      {/* Terminal Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
-            <Scale size={20} />
-          </div>
-          <div>
-            <h3 className="font-black text-sm text-white">
-              CPCB Certified Scale & Handover Terminal
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              Lot ID: <span className="font-mono text-emerald-400 font-bold">{activeLot.lot_id}</span>
-            </p>
-          </div>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,10,0.88)', backdropFilter: 'blur(20px)' }}>
 
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-500/40">
-          Scale: CALIBRATED (ISO-17025)
-        </span>
-      </div>
+      {/* Ambient glow */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 50% 40% at 50% 50%, rgba(59,130,246,0.14) 0%, transparent 70%)' }} />
 
-      <form onSubmit={handleSubmitVerification} className="space-y-4">
-        
-        {/* Material & Estimated Info */}
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
-            <span className="text-[10px] uppercase font-bold text-slate-500 block">
-              Declared Material
-            </span>
-            <span className="text-white font-extrabold text-sm block mt-0.5">
-              {activeLot.category_name}
-            </span>
-            <span className="text-slate-400 text-[11px]">
-              Rate: ₹{baseRate} / kg
-            </span>
-          </div>
+      {/* Crystal card */}
+      <div className="w-full max-w-sm rounded-3xl overflow-hidden relative" style={{
+        background: 'rgba(6,14,32,0.94)',
+        backdropFilter: 'blur(28px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
+        border: '1.5px solid rgba(255,255,255,0.14)',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.07)',
+        animation: 'float-card 3.5s ease-in-out infinite',
+      }}>
+        {/* Top shimmer accent */}
+        <div className="absolute top-0 inset-x-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.80), rgba(16,185,129,0.60), transparent)' }} />
 
-          <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800">
-            <span className="text-[10px] uppercase font-bold text-slate-500 block">
-              Collector Estimate
-            </span>
-            <span className="text-slate-300 font-mono font-extrabold text-sm block mt-0.5">
-              {estWeight} kg
-            </span>
-            <span className="text-slate-400 text-[11px]">
-              Quoted: ₹{activeLot.quoted_amount}
-            </span>
-          </div>
-        </div>
-
-        {/* Step 1: Re-weighing Terminal Input */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between items-center text-xs">
-            <label className="font-bold text-slate-300 flex items-center gap-1.5">
-              <Scale size={14} className="text-blue-400" />
-              <span>Digital Weighing Scale Reading (KG):</span>
-            </label>
-            <span className="text-[11px] font-mono text-slate-400">
-              Tolerance: ±0.05kg
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              step="0.1"
-              min="0.1"
-              value={scaleWeight}
-              onChange={(e) => setScaleWeight(parseFloat(e.target.value) || 0)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-2xl font-black font-mono text-emerald-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <span className="text-lg font-bold text-slate-400 px-2">KG</span>
-          </div>
-        </div>
-
-        {/* Step 2: Anomaly Detection Banner (>10% variance) */}
-        {isAnomaly && (
-          <div className="bg-amber-950/40 border border-amber-500/50 rounded-2xl p-3.5 space-y-1 text-xs animate-shake">
-            <div className="flex items-center gap-2 text-amber-300 font-black">
-              <AlertTriangle size={16} className="text-amber-400 animate-pulse" />
-              <span>Weight Divergence Flagged ({divergencePct.toFixed(1)}%)</span>
+        {/* Header */}
+        <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl" style={{
+                background: 'rgba(59,130,246,0.18)',
+                border: '1px solid rgba(59,130,246,0.40)',
+                boxShadow: '0 0 14px rgba(59,130,246,0.20)',
+              }}>
+                <ShieldCheck size={22} style={{ color: '#93c5fd' }} />
+              </div>
+              <div>
+                <h2 className="text-base font-extrabold text-white">Lot Verification</h2>
+                <div className="text-[11px] text-slate-400 font-mono mt-0.5">{lot.lot_id}</div>
+              </div>
             </div>
-            <p className="text-slate-300 text-[11px] leading-relaxed">
-              Scale reading differs by {Math.abs(weightDiff).toFixed(1)} kg from declared weight.
-              Fair payout will be calibrated strictly according to the verified scale weight.
-            </p>
+            <button type="button" onClick={onClose} className="p-1.5 rounded-full hover:bg-white/6 text-slate-400 touch-press">
+              <X size={18} />
+            </button>
           </div>
-        )}
 
-        {/* Adjusted Payout Summary */}
-        <div className="bg-slate-950 rounded-2xl p-3.5 border border-slate-800 flex items-center justify-between">
+          {/* Lot info pill row */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {[
+              { label: lot.vernacular_hi || lot.category_name, color: '#93c5fd', bg: 'rgba(59,130,246,0.12)' },
+              { label: `${lot.est_weight_kg} kg (est.)`, color: '#fcd34d', bg: 'rgba(245,158,11,0.12)' },
+              { label: `₹${lot.quoted_amount}`, color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)' },
+            ].map(({ label, color, bg }) => (
+              <span key={label} className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+                style={{ background: bg, color, border: `1px solid ${color}44` }}>
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          {/* Scale weight re-entry */}
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">
-              Adjusted Scale Valuation
-            </span>
-            <span className="text-xs text-slate-400 font-mono">
-              {currentScale} kg × ₹{baseRate}/kg
-            </span>
+            <label className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">
+              <Scale size={12} />
+              <span>Scale Weight (kg) — Physical Re-check</span>
+            </label>
+            <input type="number" placeholder="e.g. 14.2" min="0.1" step="0.1"
+              value={verifiedWeight} onChange={e => setVerifiedWeight(e.target.value)}
+              className="glass-input w-full px-4 py-3.5 rounded-2xl text-xl font-black font-mono"
+              style={{ letterSpacing: '2px' }}
+            />
           </div>
-          <div className="text-right">
-            <span className="text-2xl font-black text-emerald-400 font-mono">
-              ₹{adjustedPay.toLocaleString('en-IN')}
-            </span>
+
+          {/* 4-digit OTP input */}
+          <div>
+            <label className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">
+              <KeyRound size={12} />
+              <span>Collector OTP — 4-Digit Secret Code</span>
+            </label>
+            <input type="text" inputMode="numeric" maxLength={4} placeholder="••••"
+              value={enteredOtp} onChange={e => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              className="glass-input glass-input-amber w-full px-4 py-3.5 rounded-2xl text-3xl font-black font-mono text-center"
+              style={{ letterSpacing: '12px' }}
+            />
           </div>
-        </div>
 
-        {/* Step 3: Payment Mode Selection */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-300 block">
-            Immediate Disbursement Mode:
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setPaymentMode('UPI')}
-              className={`py-2 px-3 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all touch-press ${
-                paymentMode === 'UPI'
-                  ? 'bg-blue-600 text-white border-blue-400 shadow-md'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <IndianRupee size={14} />
-              <span>Instant Bank UPI</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPaymentMode('CASH')}
-              className={`py-2 px-3 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all touch-press ${
-                paymentMode === 'CASH'
-                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-md'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <span>Cash on Handover</span>
-            </button>
+          {/* OTP progress dots */}
+          <div className="flex justify-center gap-2">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="w-3 h-3 rounded-full transition-all" style={{
+                background: i < enteredOtp.length ? '#f59e0b' : 'rgba(255,255,255,0.10)',
+                boxShadow: i < enteredOtp.length ? '0 0 8px rgba(245,158,11,0.55)' : 'none',
+              }} />
+            ))}
           </div>
-        </div>
 
-        {/* Step 4: 4-Digit Collector Verification Code (OTP) */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-            <KeyRound size={14} className="text-amber-400" />
-            <span>Enter 4-Digit Handover Code (from Collector Passbook):</span>
-          </label>
-          <input
-            type="text"
-            maxLength={4}
-            placeholder="e.g. 7394"
-            value={otpCode}
-            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-3xl font-black font-mono tracking-widest text-amber-400 placeholder:text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-          />
-        </div>
-
-        {errorMsg && (
-          <div className="bg-red-950/60 border border-red-500/50 p-2.5 rounded-xl text-xs text-red-300 font-bold">
-            {errorMsg}
-          </div>
-        )}
-
-        {/* Step 5: Seal Handover & Issue Manifest */}
-        <button
-          type="submit"
-          disabled={isVerifying || activeLot.status === 'HANDOVER_VERIFIED'}
-          className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all touch-press ${
-            activeLot.status === 'HANDOVER_VERIFIED'
-              ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-              : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:brightness-110 text-white shadow-blue-600/30'
-          }`}
-        >
-          {isVerifying ? (
-            <span>Verifying & Sealing Transfer...</span>
-          ) : activeLot.status === 'HANDOVER_VERIFIED' ? (
-            <>
-              <CheckCircle2 size={18} />
-              <span>Lot Already Verified & Handover Completed</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 size={18} />
-              <span>Verify Handover & Generate CPCB Form-6 Manifest</span>
-            </>
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold"
+              style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.35)', color: '#fca5a5' }}>
+              <AlertTriangle size={14} />
+              <span>{error}</span>
+            </div>
           )}
-        </button>
 
-      </form>
+          {/* Verify CTA */}
+          <button type="button" disabled={isVerifying || enteredOtp.length !== 4 || !verifiedWeight}
+            onClick={handleVerify}
+            className="w-full py-4 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 touch-press"
+            style={enteredOtp.length === 4 && verifiedWeight ? {
+              background: 'linear-gradient(135deg, #1d4ed8, #059669)',
+              boxShadow: '0 8px 28px rgba(29,78,216,0.35)',
+              color: '#fff',
+            } : {
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              color: '#475569',
+            }}>
+            {isVerifying
+              ? <><span className="animate-spin inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full" /><span>Verifying...</span></>
+              : <><CheckCircle2 size={18} /><span>Verify & Lock Handover</span></>
+            }
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -5,40 +5,37 @@ import { ttsService } from '../services/tts';
 export default function LanguageToggle({ currentLang, onToggle }) {
   const switchLang = (newLang) => {
     onToggle(newLang);
-    if (newLang === 'hi') {
-      ttsService.speak('भाषा हिंदी चुनी गई है', 'hi');
-    } else {
-      ttsService.speak('मराठी भाषा निवडली आहे', 'mr');
-    }
+    ttsService.playChime('click');
+    if (newLang === 'hi') ttsService.speak('भाषा हिंदी चुनी गई', 'hi');
+    else ttsService.speak('मराठी भाषा निवडली', 'mr');
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-700/80 rounded-full p-1 shadow-md backdrop-blur-md">
-      <div className="px-2 py-1 text-slate-400 flex items-center gap-1 text-xs font-semibold">
-        <Globe size={14} className="text-emerald-400" />
-      </div>
-      <button
-        type="button"
-        onClick={() => switchLang('hi')}
-        className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all touch-press ${
-          currentLang === 'hi'
-            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/40 ring-2 ring-emerald-400/50'
-            : 'text-slate-300 hover:text-white hover:bg-slate-800'
-        }`}
-      >
-        हिंदी (HI)
-      </button>
-      <button
-        type="button"
-        onClick={() => switchLang('mr')}
-        className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all touch-press ${
-          currentLang === 'mr'
-            ? 'bg-amber-600 text-white shadow-md shadow-amber-600/40 ring-2 ring-amber-400/50'
-            : 'text-slate-300 hover:text-white hover:bg-slate-800'
-        }`}
-      >
-        मराठी (MR)
-      </button>
+    <div className="flex items-center gap-1 p-1 rounded-xl" style={{
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.10)',
+      backdropFilter: 'blur(10px)',
+    }}>
+      <Globe size={13} className="text-emerald-400 ml-1.5 mr-0.5" />
+      {[
+        { code: 'hi', label: 'हिंदी', accent: { bg: 'rgba(16,185,129,0.22)', border: 'rgba(16,185,129,0.50)', color: '#6ee7b7', shadow: 'rgba(16,185,129,0.25)' } },
+        { code: 'mr', label: 'मराठी', accent: { bg: 'rgba(245,158,11,0.22)', border: 'rgba(245,158,11,0.50)', color: '#fcd34d', shadow: 'rgba(245,158,11,0.25)' } },
+      ].map(({ code, label, accent }) => (
+        <button key={code} type="button" onClick={() => switchLang(code)}
+          className="px-2.5 py-1 text-[11px] font-black rounded-lg transition-all touch-press devanagari-caption"
+          style={currentLang === code ? {
+            background: accent.bg,
+            border: `1px solid ${accent.border}`,
+            color: accent.color,
+            boxShadow: `0 0 10px ${accent.shadow}`,
+          } : {
+            color: '#94a3b8',
+            border: '1px solid transparent',
+          }}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }

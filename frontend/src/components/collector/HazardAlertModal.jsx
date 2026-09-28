@@ -1,99 +1,114 @@
 import React, { useEffect } from 'react';
-import { ShieldAlert, AlertOctagon, Flame, Skull, CheckCircle, Volume2 } from 'lucide-react';
+import { ShieldAlert, AlertOctagon, Flame, Skull, CheckCircle } from 'lucide-react';
 import SpeakerButton from '../SpeakerButton';
 import { ttsService } from '../../services/tts';
 
 export default function HazardAlertModal({ isOpen, onClose, material, lang }) {
   if (!isOpen || !material) return null;
 
-  const isBattery = material.id === 2 || material.name?.toLowerCase().includes('battery');
-  const isCrt = material.id === 3 || material.name?.toLowerCase().includes('crt');
-
   const warningText = lang === 'mr'
-    ? (material.hazard_voice_prompt_mr || material.hazard_prompt_mr || 'सावधान! हा अतिधोकादायक ई-कचरा आहे!')
+    ? (material.hazard_voice_prompt_mr || material.hazard_prompt_mr || 'सावधान! हा अतिधोकादायक कचरा आहे!')
     : (material.hazard_voice_prompt_hi || material.hazard_prompt_hi || 'सावधान! यह खतरनाक ई-कचरा है!');
 
   useEffect(() => {
-    // Play urgent sound and automatically speak warning prompt
     ttsService.playChime('hazard');
-    const timer = setTimeout(() => {
-      ttsService.speak(warningText, lang);
-    }, 400);
-
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => ttsService.speak(warningText, lang), 400);
+    return () => clearTimeout(t);
   }, [material, lang]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-red-950/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-slate-900 border-2 border-red-500 rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl shadow-red-600/50 flex flex-col text-center">
-        
-        {/* Animated Emergency Shield Banner */}
-        <div className="bg-gradient-to-b from-red-600 to-red-800 p-6 flex flex-col items-center justify-center text-white relative">
-          <div className="w-24 h-24 rounded-full bg-red-950/40 border-4 border-red-400/80 flex items-center justify-center mb-3 animate-hazard-pulse">
-            <ShieldAlert size={56} className="text-white drop-shadow-md" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3"
+      style={{ background: 'rgba(30,0,10,0.88)', backdropFilter: 'blur(16px)' }}>
+
+      {/* Outer crimson glow halo */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(244,63,94,0.18) 0%, transparent 70%)' }} />
+
+      <div className="w-full max-w-sm rounded-3xl overflow-hidden glass-crimson relative" style={{
+        boxShadow: '0 0 60px rgba(244,63,94,0.28), 0 20px 50px rgba(0,0,0,0.60)',
+        animation: 'float-card 3.5s ease-in-out infinite',
+      }}>
+        {/* Top shimmer line */}
+        <div className="absolute top-0 inset-x-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(244,63,94,0.80), transparent)' }} />
+
+        {/* Crimson shield banner */}
+        <div className="relative p-7 flex flex-col items-center text-center"
+          style={{ background: 'linear-gradient(180deg, rgba(220,38,38,0.25) 0%, transparent 100%)' }}>
+          {/* Pulsing shield icon */}
+          <div className="w-24 h-24 rounded-full flex items-center justify-center mb-4"
+            style={{
+              background: 'rgba(244,63,94,0.18)',
+              border: '2px solid rgba(244,63,94,0.55)',
+              boxShadow: '0 0 40px rgba(244,63,94,0.35)',
+              animation: 'hazard-pulse 1.2s infinite',
+            }}>
+            <ShieldAlert size={52} style={{ color: '#fca5a5', filter: 'drop-shadow(0 0 8px rgba(244,63,94,0.8))' }} />
           </div>
 
-          <div className="inline-flex items-center gap-1.5 bg-red-950/80 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-red-200 border border-red-400">
-            <AlertOctagon size={14} className="text-yellow-300 animate-spin" />
-            <span>{lang === 'mr' ? 'अति-धोकादायक कचरा' : 'अत्यधिक खतरनाक ई-कचरा'}</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-2 text-[11px] font-black uppercase tracking-wider"
+            style={{ background: 'rgba(244,63,94,0.20)', border: '1px solid rgba(244,63,94,0.45)', color: '#fca5a5' }}>
+            <AlertOctagon size={13} className="animate-spin" style={{ animationDuration: '3s', color: '#fbbf24' }} />
+            <span>{lang === 'mr' ? 'अति-धोकादायक ई-कचरा' : 'अत्यधिक खतरनाक ई-कचरा'}</span>
           </div>
 
-          <h2 className="text-2xl font-black mt-2 tracking-tight">
-            {lang === 'mr' ? 'धोका! खबरदारी बाळगा' : 'सावधान! जलने व विस्फोट का खतरा'}
+          <h2 className="text-xl font-black text-white devanagari-safe" style={{ textShadow: '0 0 20px rgba(244,63,94,0.50)' }}>
+            {lang === 'mr' ? 'धोका! खबरदारी बाळगा' : 'सावधान! जलाना सख्त मना है'}
           </h2>
         </div>
 
-        {/* Hazard Chemical Warning Breakdown */}
-        <div className="p-5 space-y-4">
-          <div className="bg-red-950/30 border border-red-500/30 rounded-2xl p-3.5 text-left flex items-start gap-3">
+        {/* Warning body */}
+        <div className="px-5 pb-5 space-y-4">
+          {/* Voice warning card */}
+          <div className="rounded-2xl p-3.5 flex items-start gap-3"
+            style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.30)' }}>
             <SpeakerButton text={warningText} lang={lang} size="md" className="flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold text-red-200 leading-relaxed">
-                {warningText}
-              </p>
-            </div>
+            <p className="text-xs font-semibold leading-relaxed devanagari-safe" style={{ color: '#fecaca' }}>
+              {warningText}
+            </p>
           </div>
 
-          {/* Low-Literacy Visual Pictograms */}
-          <div className="grid grid-cols-2 gap-2 text-left">
-            <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-red-500/20 text-red-400">
-                <Flame size={18} />
+          {/* Visual safety pictograms */}
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { icon: Flame, colorBg: 'rgba(239,68,68,0.18)', colorBorder: 'rgba(239,68,68,0.40)', colorIcon: '#f87171',
+                textHi: 'आग में न जलाएं', textMr: 'कधीही जाळू नका' },
+              { icon: Skull, colorBg: 'rgba(245,158,11,0.18)', colorBorder: 'rgba(245,158,11,0.40)', colorIcon: '#fbbf24',
+                textHi: 'जहरीला एसिड / गैस', textMr: 'विषारी ॲसिड / वायू' },
+            ].map(({ icon: Icon, colorBg, colorBorder, colorIcon, textHi, textMr }, i) => (
+              <div key={i} className="rounded-xl p-2.5 flex items-center gap-2"
+                style={{ background: colorBg, border: `1px solid ${colorBorder}` }}>
+                <div className="p-1.5 rounded-lg flex-shrink-0" style={{ background: `${colorBg}` }}>
+                  <Icon size={18} style={{ color: colorIcon }} />
+                </div>
+                <span className="text-[11px] font-bold leading-tight devanagari-safe" style={{ color: '#f8fafc' }}>
+                  {lang === 'mr' ? textMr : textHi}
+                </span>
               </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight">
-                {lang === 'mr' ? 'कधीही जाळू नका (No Fire)' : 'आग में कभी न जलाएं (No Fire)'}
-              </span>
-            </div>
-
-            <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-yellow-500/20 text-yellow-400">
-                <Skull size={18} />
-              </div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight">
-                {lang === 'mr' ? 'विषारी ॲसिड / वायू' : 'जहरीला तेजाब / गैस'}
-              </span>
-            </div>
+            ))}
           </div>
 
-          <p className="text-[11px] text-slate-400 font-medium">
+          <p className="text-[11px] text-center devanagari-caption" style={{ color: '#94a3b8' }}>
             {lang === 'mr'
-              ? 'हे थेट सीपीसीबी मान्यताप्राप्त रिसायकलरला सुरक्षित सीलबंद डब्यात दिले जाईल.'
-              : 'इसे सीधे सीपीसीबी अधिकृत प्लांट में रीसायकल किया जाएगा। कोई रिस्क न लें।'}
+              ? 'हे थेट CPCB अधिकृत रिसायकलरला सुरक्षित पाठवले जाईल.'
+              : 'इसे CPCB अधिकृत प्लांट पर सुरक्षित रीसायकल किया जाएगा।'}
           </p>
 
-          {/* Huge Safety Pledge Confirmation Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-4 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:brightness-110 text-white font-black text-base rounded-2xl shadow-lg shadow-red-600/40 flex items-center justify-center gap-2 touch-press"
-          >
-            <CheckCircle size={22} />
-            <span>
+          {/* Big confirmation button */}
+          <button type="button" onClick={onClose}
+            className="w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 touch-press"
+            style={{
+              background: 'linear-gradient(135deg, rgba(220,38,38,0.60), rgba(185,28,28,0.80))',
+              border: '1.5px solid rgba(244,63,94,0.55)',
+              color: '#fff',
+              boxShadow: '0 6px 24px rgba(244,63,94,0.30)',
+            }}>
+            <CheckCircle size={20} />
+            <span className="devanagari-safe">
               {lang === 'mr' ? 'मी समजलो, सुरक्षित हाताळणार' : 'मैंने समझ लिया, सुरक्षित रखूंगा'}
             </span>
           </button>
         </div>
-
       </div>
     </div>
   );

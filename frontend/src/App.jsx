@@ -10,16 +10,15 @@ import { Smartphone, Monitor } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('collector'); // 'collector' | 'recycler' | 'jury'
-  const [lang, setLang] = useState('hi'); // 'hi' | 'mr'
+  const [currentView, setCurrentView] = useState('collector');
+  const [lang, setLang] = useState('hi');
   const [isSimulatedOffline, setIsSimulatedOffline] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [newLotAlert, setNewLotAlert] = useState(null);
-  const [phoneFrameMode, setPhoneFrameMode] = useState(true); // Toggle mobile simulator frame
+  const [phoneFrameMode, setPhoneFrameMode] = useState(true);
 
-  // Initialize network and offline status
   useEffect(() => {
     const updateStatus = () => {
       const online = offlineStorage.isOnline();
@@ -27,13 +26,10 @@ export default function App() {
       setIsSimulatedOffline(offlineStorage.isSimulatedOffline);
       updateQueueCount();
     };
-
     updateStatus();
-
     window.addEventListener('network-status-changed', updateStatus);
     window.addEventListener('online', updateStatus);
     window.addEventListener('offline', updateStatus);
-
     return () => {
       window.removeEventListener('network-status-changed', updateStatus);
       window.removeEventListener('online', updateStatus);
@@ -46,24 +42,15 @@ export default function App() {
     setOfflineQueueCount(queue.length);
   };
 
-  // Auto-sync when transitioning from offline to online
   useEffect(() => {
-    if (isOnline && offlineQueueCount > 0) {
-      handleManualSync();
-    }
+    if (isOnline && offlineQueueCount > 0) handleManualSync();
   }, [isOnline]);
 
-  // Connect WebSocket for real-time live synchronization
   useEffect(() => {
     const ws = initWebSocket((message) => {
-      console.log('Live WS Event:', message);
-      if (message.type === 'LOT_CREATED') {
-        setNewLotAlert(message.data);
-      } else if (message.type === 'LOT_VERIFIED') {
-        setNewLotAlert(message.data.lot);
-      }
+      if (message.type === 'LOT_CREATED') setNewLotAlert(message.data);
+      else if (message.type === 'LOT_VERIFIED') setNewLotAlert(message.data?.lot);
     });
-
     return () => ws.disconnect();
   }, []);
 
@@ -72,28 +59,19 @@ export default function App() {
     setIsSimulatedOffline(nextState);
     offlineStorage.setSimulatedOffline(nextState);
     setIsOnline(!nextState);
-
     ttsService.playChime('click');
     if (nextState) {
-      ttsService.speak(
-        lang === 'mr' ? 'ऑफलाइन मोड सुरू झाला. सर्व लॉट फोनमध्ये जतन होतील.' : 'ऑफलाइन मोड सक्रिय. सभी लॉट फोन में सुरक्षित रहेंगे.',
-        lang
-      );
+      ttsService.speak(lang === 'mr' ? 'ऑफलाइन मोड सुरू झाला.' : 'ऑफलाइन मोड सक्रिय।', lang);
     } else {
-      ttsService.speak(
-        lang === 'mr' ? 'ऑनलाइन मोड जोडला गेला. बॅकग्राउंड सिंक सुरू.' : 'ऑनलाइन मोड जुड़ गया. बैकग्राउंड सिंक शुरू.',
-        lang
-      );
+      ttsService.speak(lang === 'mr' ? 'ऑनलाइन जोडले गेले.' : 'ऑनलाइन जुड़ गए।', lang);
     }
   };
 
   const handleManualSync = async () => {
     const queue = await offlineStorage.getOfflineQueue();
     if (queue.length === 0 || !isOnline) return;
-
     setIsSyncing(true);
     ttsService.playChime('click');
-
     try {
       const res = await batchSyncLots(queue);
       if (res.success) {
@@ -101,11 +79,10 @@ export default function App() {
         setOfflineQueueCount(0);
         ttsService.playChime('success');
         confetti({ particleCount: 60, spread: 50, origin: { y: 0.8 } });
-
-        const syncMsg = lang === 'mr'
-          ? `${res.count} ऑफलाइन लॉट यशस्वीरित्या सर्व्हरवर सिंक झाले!`
-          : `${res.count} ऑफलाइन लॉट सफलतापूर्वक सर्वर पर सिंक हो गए!`;
-        ttsService.speak(syncMsg, lang);
+        ttsService.speak(
+          lang === 'mr' ? `${res.count} लॉट सिंक झाले!` : `${res.count} लॉट सिंक हो गए!`,
+          lang
+        );
       }
     } catch (e) {
       console.error('Batch sync failed', e);
@@ -114,91 +91,91 @@ export default function App() {
     }
   };
 
-  const handleLotCreated = () => {
-    updateQueueCount();
-  };
+  const handleLotCreated = () => updateQueueCount();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">
-      
-      {/* Global Presentation Navigation & Offline Simulator Header */}
-      <OfflineSimBanner
-        isOnline={isOnline}
-        isSimulatedOffline={isSimulatedOffline}
-        onToggleSimulatedOffline={handleToggleSimulatedOffline}
-        offlineQueueCount={offlineQueueCount}
-        onManualSync={handleManualSync}
-        isSyncing={isSyncing}
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        lang={lang}
-        onLanguageChange={setLang}
-      />
+    <div className="min-h-screen relative">
+      {/* Ambient background mesh — always fixed behind glass layers */}
+      <div className="ambient-bg" aria-hidden="true" />
 
-      {/* Main View Router */}
-      <main className="flex-1 flex flex-col justify-start">
-        {currentView === 'collector' && (
-          <div className="flex-1 flex flex-col items-center justify-start py-4 px-2">
-            
-            {/* Phone Frame Toggle for Presentation Clarity */}
-            <div className="w-full max-w-md flex items-center justify-between px-2 mb-2">
-              <span className="text-[11px] font-bold text-slate-400">
-                {lang === 'mr' ? 'मोबाईल डिस्प्ले व्ह्यू' : 'मोबाइल स्क्रीन सिमुलेटर'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPhoneFrameMode(!phoneFrameMode)}
-                className="text-[11px] font-bold text-slate-400 hover:text-white flex items-center gap-1 bg-slate-900 border border-slate-800 px-2 py-1 rounded-lg"
-              >
-                {phoneFrameMode ? <Monitor size={12} /> : <Smartphone size={12} />}
-                <span>{phoneFrameMode ? 'Full Width' : 'Phone Frame'}</span>
-              </button>
-            </div>
+      {/* Main app shell — sits above ambient layer */}
+      <div className="relative z-10 min-h-screen flex flex-col selection:bg-emerald-500/60 selection:text-white">
 
-            {/* Mobile Viewport Container */}
-            <div
-              className={`w-full transition-all duration-300 ${
+        {/* Global Navigation Header */}
+        <OfflineSimBanner
+          isOnline={isOnline}
+          isSimulatedOffline={isSimulatedOffline}
+          onToggleSimulatedOffline={handleToggleSimulatedOffline}
+          offlineQueueCount={offlineQueueCount}
+          onManualSync={handleManualSync}
+          isSyncing={isSyncing}
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          lang={lang}
+          onLanguageChange={setLang}
+        />
+
+        {/* View Router */}
+        <main className="flex-1 flex flex-col">
+          {currentView === 'collector' && (
+            <div className="flex-1 flex flex-col items-center py-5 px-3">
+              {/* Phone frame toggle */}
+              <div className="w-full max-w-md flex items-center justify-between px-1 mb-3">
+                <span className="text-xs font-semibold text-slate-400 devanagari-caption">
+                  {lang === 'mr' ? 'मोबाईल व्ह्यू' : 'मोबाइल व्यू'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPhoneFrameMode(p => !p)}
+                  className="glass-pill text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 touch-press"
+                >
+                  {phoneFrameMode ? <Monitor size={12} /> : <Smartphone size={12} />}
+                  <span>{phoneFrameMode ? 'Full Width' : 'Phone Frame'}</span>
+                </button>
+              </div>
+
+              <div className={`w-full transition-all duration-300 ${
                 phoneFrameMode
-                  ? 'max-w-md rounded-[40px] border-4 border-slate-800 shadow-2xl shadow-emerald-500/10 overflow-hidden bg-slate-950 relative'
+                  ? 'max-w-md rounded-[42px] p-1.5 shadow-2xl shadow-emerald-900/30 overflow-hidden'
                   : 'max-w-xl'
               }`}
-            >
-              {phoneFrameMode && (
-                /* Top Speaker Notch */
-                <div className="w-28 h-4 bg-slate-800 rounded-b-xl mx-auto mb-1 flex items-center justify-center">
-                  <div className="w-10 h-1 bg-slate-700 rounded-full"></div>
-                </div>
-              )}
-
-              <CollectorApp
-                lang={lang}
-                isOnline={isOnline}
-                onLotCreated={handleLotCreated}
-              />
+                style={phoneFrameMode ? {
+                  background: 'rgba(15,23,42,0.90)',
+                  backdropFilter: 'blur(12px)',
+                  border: '2px solid rgba(255,255,255,0.14)',
+                  boxShadow: '0 24px 80px rgba(0,0,0,0.60), 0 0 0 1px rgba(255,255,255,0.06)'
+                } : {}}
+              >
+                {phoneFrameMode && (
+                  <div className="w-24 h-5 mx-auto mb-1 rounded-b-xl flex items-center justify-center gap-1.5"
+                    style={{ background: 'rgba(255,255,255,0.07)' }}>
+                    <div className="w-8 h-1 rounded-full bg-slate-700" />
+                    <div className="w-2 h-2 rounded-full bg-slate-700" />
+                  </div>
+                )}
+                <CollectorApp lang={lang} isOnline={isOnline} onLotCreated={handleLotCreated} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {currentView === 'recycler' && (
-          <RecyclerPortal
-            onLotVerified={() => updateQueueCount()}
-            newLotAlert={newLotAlert}
-          />
-        )}
+          {currentView === 'recycler' && (
+            <RecyclerPortal onLotVerified={updateQueueCount} newLotAlert={newLotAlert} />
+          )}
 
-        {currentView === 'jury' && (
-          <JuryImpactCalculator />
-        )}
-      </main>
+          {currentView === 'jury' && (
+            <JuryImpactCalculator />
+          )}
+        </main>
 
-      {/* Footer Branding */}
-      <footer className="bg-slate-950/80 border-t border-slate-900 py-3 px-4 text-center text-xs text-slate-500">
-        <p>
-          SIH Problem Statement ID 26229: <span className="text-slate-400 font-medium">Kabadiwala Connect – Informal E-Waste Formalization Chain</span> •
-          Ministry of Mines & JNARDDC
-        </p>
-      </footer>
-
+        {/* Footer */}
+        <footer className="glass-panel border-t border-white/[0.07] py-3 px-4 text-center text-xs text-slate-500 mt-auto">
+          <p>
+            SIH Problem Statement ID 26229 •{' '}
+            <span className="text-slate-400 font-semibold">Kabadiwala Connect</span> •{' '}
+            Ministry of Mines & JNARDDC
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }

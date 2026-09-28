@@ -1,108 +1,354 @@
 @import "tailwindcss";
 
+/* ================================================================
+   KABADIWALA CONNECT — GLASS MORFIX DESIGN SYSTEM
+   Global glassmorphism tokens, ambient gradients, and micro-animations
+   SIH Problem Statement ID 26229 — Ministry of Mines & JNARDDC
+================================================================ */
+
 @layer base {
   :root {
-    --primary-green: #059669;
-    --primary-dark: #064e3b;
-    --accent-amber: #d97706;
-    --hazard-red: #dc2626;
-    --bg-slate: #0f172a;
+    /* === GLASS MORFIX CORE TOKENS === */
+    --glass-base:        rgba(17, 24, 39, 0.70);
+    --glass-elevated:    rgba(15, 23, 42, 0.85);
+    --glass-blur:        blur(16px) saturate(180%);
+    --glass-blur-heavy:  blur(24px) saturate(200%);
+    --glass-border:      rgba(255, 255, 255, 0.14);
+    --glass-border-em:   rgba(255, 255, 255, 0.28);
+    --glass-shadow:      0 8px 32px 0 rgba(31, 38, 135, 0.22);
+    --glass-shadow-xl:   0 12px 48px 0 rgba(0, 0, 0, 0.32);
+
+    /* === E-WASTE THEME PALETTE === */
+    --emerald:   #10B981;
+    --teal:      #06B6D4;
+    --amber:     #F59E0B;
+    --crimson:   #F43F5E;
+    --slate-900: #0F172A;
+    --slate-50:  #F8FAFC;
+
+    /* === TYPOGRAPHY === */
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html { scroll-behavior: smooth; }
+
   body {
-    background-color: #0b1120;
+    background-color: #060d1a;
     color: #f1f5f9;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    margin: 0;
-    padding: 0;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
   }
 
   #root {
     width: 100%;
     min-height: 100vh;
-    margin: 0;
-    padding: 0;
   }
 }
 
-/* Custom animations & low-literacy micro-interactions */
-@keyframes audio-pulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1.08); box-shadow: 0 0 0 14px rgba(16, 185, 129, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+/* ================================================================
+   AMBIENT BACKGROUND MESH — vibrant e-waste hues shine through glass
+================================================================ */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(16, 185, 129, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 35% at 80% 5%,  rgba(6, 182, 212, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 45% at 50% 85%, rgba(245, 158, 11, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 60% at 90% 60%, rgba(16, 185, 129, 0.10) 0%, transparent 70%),
+    linear-gradient(160deg, #060d1a 0%, #0a1628 40%, #071220 100%);
+  pointer-events: none;
+  overflow: hidden;
 }
 
-@keyframes hazard-pulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
-  50% { transform: scale(1.06); filter: drop-shadow(0 0 25px rgba(239, 68, 68, 0.95)); }
+/* Subtle animated orbs */
+.ambient-bg::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: orb-drift-1 20s ease-in-out infinite;
+  pointer-events: none;
+}
+.ambient-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 15%;
+  right: 8%;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.10) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: orb-drift-2 25s ease-in-out infinite;
+  pointer-events: none;
 }
 
-@keyframes scan-line {
-  0% { transform: translateY(0%); opacity: 0.8; }
-  50% { opacity: 1; }
-  100% { transform: translateY(320px); opacity: 0.8; }
+@keyframes orb-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.08); }
+}
+@keyframes orb-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-35px, 25px) scale(1.06); }
 }
 
-@keyframes radar-sweep {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* ================================================================
+   GLASS MORFIX UTILITY CLASSES
+================================================================ */
 
-.animate-audio-pulse {
-  animation: audio-pulse 1.8s infinite;
-}
-
-.animate-hazard-pulse {
-  animation: hazard-pulse 1.2s infinite;
-}
-
-.animate-scan-line {
-  animation: scan-line 2.2s ease-in-out infinite;
-}
-
-.animate-radar {
-  animation: radar-sweep 6s linear infinite;
-  transform-origin: center center;
-}
-
-/* Glassmorphism helpers */
+/* Base frosted glass panel */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
+/* Elevated modal / action-sheet glass */
+.glass-elevated {
+  background: rgba(10, 18, 36, 0.88);
+  backdrop-filter: var(--glass-blur-heavy);
+  -webkit-backdrop-filter: var(--glass-blur-heavy);
+  border: 1.5px solid var(--glass-border-em);
+  box-shadow: var(--glass-shadow-xl), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Material category card — base */
 .glass-card {
-  background: rgba(30, 41, 59, 0.7);
+  background: rgba(22, 36, 60, 0.72);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.glass-card:active, .glass-card.selected {
+  border-color: rgba(16, 185, 129, 0.75);
+  box-shadow:
+    0 0 0 2px rgba(16, 185, 129, 0.25),
+    0 0 20px rgba(16, 185, 129, 0.20),
+    0 8px 28px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Emerald accent glass */
+.glass-emerald {
+  background: rgba(5, 46, 22, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(16,185,129,0.1);
+}
+
+/* Amber glass — pending/handover state */
+.glass-amber {
+  background: rgba(41, 24, 0, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.07), inset 0 1px 0 rgba(245,158,11,0.08);
+}
+
+/* Crimson hazard glass */
+.glass-crimson {
+  background: rgba(44, 5, 15, 0.60);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1.5px solid rgba(244, 63, 94, 0.45);
+  box-shadow: 0 8px 32px rgba(244, 63, 94, 0.18), inset 0 1px 0 rgba(244,63,94,0.08);
+}
+
+/* Blue / recycler portal glass */
+.glass-blue {
+  background: rgba(8, 22, 50, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.10), inset 0 1px 0 rgba(59,130,246,0.06);
+}
+
+/* Purple / jury jury glass */
+.glass-purple {
+  background: rgba(30, 15, 60, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(139, 92, 246, 0.30);
+  box-shadow: 0 4px 18px rgba(139, 92, 246, 0.10), inset 0 1px 0 rgba(139,92,246,0.06);
+}
+
+/* ================================================================
+   IRIDESCENT RIM GLOW — selection affordance for touch users
+================================================================ */
+.rim-glow-emerald {
+  box-shadow:
+    0 0 0 2px rgba(16, 185, 129, 0.30),
+    0 0 22px rgba(16, 185, 129, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.rim-glow-amber {
+  box-shadow:
+    0 0 0 2px rgba(245, 158, 11, 0.30),
+    0 0 22px rgba(245, 158, 11, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.rim-glow-crimson {
+  box-shadow:
+    0 0 0 2px rgba(244, 63, 94, 0.35),
+    0 0 28px rgba(244, 63, 94, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ================================================================
+   GLASS INPUT — accessible crisp focus borders
+================================================================ */
+.glass-input {
+  background: rgba(7, 14, 28, 0.70);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.glass-input:focus {
+  outline: none;
+  border-color: rgba(16, 185, 129, 0.70);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 0 12px rgba(16, 185, 129, 0.12);
+}
+.glass-input::placeholder { color: rgba(148, 163, 184, 0.55); }
+
+.glass-input-amber:focus {
+  border-color: rgba(245, 158, 11, 0.70);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15), 0 0 12px rgba(245, 158, 11, 0.12);
+}
+
+/* ================================================================
+   PILL BADGE (semi-translucent speaker / label)
+================================================================ */
+.glass-pill {
+  background: rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
-/* Big touch button active feel */
-.touch-press {
-  transition: transform 0.1s ease, filter 0.1s ease;
+/* ================================================================
+   TYPOGRAPHY ACCESSIBILITY GUARDRAILS
+================================================================ */
+/* Devanagari readability over frosted glass */
+.devanagari-safe {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
-.touch-press:active {
-  transform: scale(0.96);
-  filter: brightness(0.9);
+.devanagari-caption {
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.40);
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
+/* High-contrast headline over dark glass */
+.contrast-high { color: #f8fafc; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+.contrast-sub  { color: #cbd5e1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+.contrast-muted{ color: #94a3b8; }
+
+/* ================================================================
+   ANIMATED MICROINTERACTIONS
+================================================================ */
+@keyframes audio-pulse {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(16,185,129,.7); }
+  70%  { transform: scale(1.08); box-shadow: 0 0 0 14px rgba(16,185,129,0); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(16,185,129,0); }
+}
+@keyframes hazard-pulse {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 8px  rgba(244,63,94,.65)); }
+  50%       { transform: scale(1.07); filter: drop-shadow(0 0 26px rgba(244,63,94,.95)); }
+}
+@keyframes scan-line {
+  0%   { transform: translateY(0);   opacity: .8; }
+  50%  { opacity: 1; }
+  100% { transform: translateY(310px); opacity: .8; }
+}
+@keyframes float-card {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+@keyframes shimmer-slide {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes orb-pulse {
+  0%, 100% { opacity: .55; transform: scale(1); }
+  50%       { opacity: .85; transform: scale(1.05); }
+}
+
+.animate-audio-pulse  { animation: audio-pulse  1.8s infinite; }
+.animate-hazard-pulse { animation: hazard-pulse  1.2s infinite; }
+.animate-scan-line    { animation: scan-line     2.2s ease-in-out infinite; }
+.animate-float        { animation: float-card    3.5s ease-in-out infinite; }
+.animate-orb          { animation: orb-pulse     4s   ease-in-out infinite; }
+
+/* Shimmer loading / highlight effect */
+.shimmer-text {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 30%, #06b6d4 60%, #10b981 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-slide 3s linear infinite;
+}
+
+/* Touch press interaction */
+.touch-press { transition: transform 0.12s ease, filter 0.12s ease; }
+.touch-press:active { transform: scale(0.95); filter: brightness(0.88); }
+
+/* ================================================================
+   SCROLLBAR STYLING
+================================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+/* ================================================================
+   CUSTOM RANGE SLIDER — touch-accessible with glass track
+================================================================ */
+input[type="range"] {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.08);
 }
-::-webkit-scrollbar-track {
-  background: #0f172a;
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--emerald);
+  border: 2.5px solid rgba(255,255,255,0.3);
+  box-shadow: 0 2px 10px rgba(16,185,129,0.5);
+  margin-top: -8px;
+  transition: box-shadow .15s ease, transform .12s ease;
 }
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 3px 16px rgba(16,185,129,0.65);
+  transform: scale(1.12);
 }

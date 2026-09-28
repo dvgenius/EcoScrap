@@ -60,6 +60,20 @@ export async function batchSyncLots(lots) {
   return res.json();
 }
 
+/**
+ * Alias used by VerificationTerminal — maps its payload shape to the backend contract.
+ * Component sends: { otp, weight, recycler_id }
+ * Backend expects:  { verification_otp, verified_weight_kg, payment_mode, recycler_id }
+ */
+export async function verifyLot(lotId, { otp, weight, recycler_id, payment_mode = 'UPI' }) {
+  return verifyHandover(lotId, {
+    verification_otp: otp,
+    verified_weight_kg: weight,
+    payment_mode,
+    recycler_id
+  });
+}
+
 export async function verifyHandover(lotId, payload) {
   const res = await fetch(`${API_BASE}/lots/${lotId}/verify-handover`, {
     method: 'POST',

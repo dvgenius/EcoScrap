@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import { ttsService } from '../services/tts';
 
 export default function SpeakerButton({ text, lang = 'hi', size = 'md', className = '' }) {
@@ -8,54 +8,50 @@ export default function SpeakerButton({ text, lang = 'hi', size = 'md', classNam
   const handleSpeak = (e) => {
     e.stopPropagation();
     if (!text) return;
-
     if (isPlaying) {
       ttsService.stop();
       setIsPlaying(false);
     } else {
       setIsPlaying(true);
       ttsService.speak(text, lang);
-      // Automatically reset playing state after a duration proportional to text length
-      const durationMs = Math.max(1500, Math.min(6000, text.length * 80));
-      setTimeout(() => {
-        setIsPlaying(false);
-      }, durationMs);
+      const duration = Math.max(1500, Math.min(6500, text.length * 80));
+      setTimeout(() => setIsPlaying(false), duration);
     }
   };
 
-  const sizeClasses = {
-    sm: 'p-1.5 w-8 h-8 text-sm',
-    md: 'p-2.5 w-11 h-11 text-base',
-    lg: 'p-3.5 w-14 h-14 text-lg'
-  };
-
-  const iconSizes = {
-    sm: 16,
-    md: 22,
-    lg: 28
-  };
+  const sizeDim = { sm: 32, md: 40, lg: 52 }[size] ?? 40;
+  const iconSz  = { sm: 14, md: 19, lg: 26 }[size] ?? 19;
+  const pad     = { sm: 6,  md: 10, lg: 14 }[size] ?? 10;
 
   return (
     <button
       type="button"
       onClick={handleSpeak}
-      title="सुनें (Audio Help)"
-      aria-label="Audio read out"
-      className={`relative inline-flex items-center justify-center rounded-full transition-all touch-press ${
-        isPlaying
-          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/50 scale-110 animate-audio-pulse'
-          : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/40'
-      } ${sizeClasses[size] || sizeClasses.md} ${className}`}
+      title="Audio सुनें"
+      aria-label="Play audio"
+      className={`relative inline-flex items-center justify-center rounded-full transition-all touch-press ${className}`}
+      style={{
+        width: sizeDim, height: sizeDim,
+        padding: pad,
+        background: isPlaying
+          ? 'rgba(16,185,129,0.30)'
+          : 'rgba(16,185,129,0.12)',
+        border: isPlaying
+          ? '1.5px solid rgba(16,185,129,0.70)'
+          : '1.5px solid rgba(16,185,129,0.30)',
+        boxShadow: isPlaying
+          ? '0 0 16px rgba(16,185,129,0.40), inset 0 1px 0 rgba(255,255,255,0.08)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(8px)',
+        animation: isPlaying ? 'audio-pulse 1.8s infinite' : 'none',
+      }}
     >
-      {isPlaying ? (
-        <Volume2 size={iconSizes[size] || 22} className="animate-pulse" />
-      ) : (
-        <Volume2 size={iconSizes[size] || 22} />
-      )}
+      <Volume2 size={iconSz} style={{ color: isPlaying ? '#34d399' : '#6ee7b7' }}
+        className={isPlaying ? 'animate-pulse' : ''} />
       {isPlaying && (
-        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
         </span>
       )}
     </button>
